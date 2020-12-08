@@ -225,7 +225,6 @@ class ForwardTacotron(nn.Module):
         dur_sil_hat_proj = self.sil_proj(dur_sil_hat.unsqueeze(1)).transpose(1, 2)
         dur = self.dur_pred(x_dur + dur_sil_hat_proj, alpha=1.)
         dur = dur.squeeze(2)
-        dur = dur + 7.
 
         pitch_hat = self.pitch_pred(x_pitch).transpose(1, 2)
         pitch_hat = pitch_function(pitch_hat)
