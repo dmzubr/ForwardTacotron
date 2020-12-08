@@ -73,8 +73,8 @@ class ForwardTrainer:
                 pitch_loss = self.l1_loss(pitch_hat, pitch.unsqueeze(1), x_lens)
 
                 dur_mean = torch.mean(dur, dim=1)
-                dur_hat = dur_hat - dur_mean
-                dur = dur - dur_mean
+                dur_hat = dur_hat - dur_mean[:, None]
+                dur = dur - dur_mean[:, None]
                 dur_loss = self.l2_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
 
                 loss = m1_loss + m2_loss + 0.1 * dur_loss + 0.1 * pitch_loss + 0.1 * sil_loss
@@ -143,8 +143,8 @@ class ForwardTrainer:
                 m1_loss = self.l1_loss(m1_hat, m, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, m, mel_lens)
                 dur_mean = torch.mean(dur, dim=1)
-                dur_hat = dur_hat - dur_mean
-                dur = dur - dur_mean
+                dur_hat = dur_hat - dur_mean[:, None]
+                dur = dur - dur_mean[:, None]
                 dur_loss = self.l2_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
                 sil_loss = self.l1_loss(sil_hat.unsqueeze(1), dur_sil.unsqueeze(1), x_lens)
                 pitch_val_loss += self.l1_loss(pitch_hat, pitch.unsqueeze(1), x_lens)
