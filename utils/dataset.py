@@ -163,7 +163,7 @@ def filter_bad_attentions(dataset: List[tuple], attention_score_dict: Dict[str, 
     dataset_filtered = []
     for item_id, mel_len in dataset:
         align_score, sharp_score = attention_score_dict[item_id]
-        if align_score > hp.forward_min_attention_alignment and sharp_score > hp.forward_min_attention_sharpness:
+        if align_score > hp.forward_min_attention_alignment and sharp_score > hp.forward_min_attention_sharpness and np.max(durs) < 100:
             dataset_filtered.append((item_id, mel_len))
     return dataset_filtered
 
