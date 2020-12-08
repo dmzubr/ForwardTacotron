@@ -114,7 +114,7 @@ class ForwardTrainer:
                 for b in range(dur_hat.size(0)):
                     dur_loss_mean += torch.mean(dur_hat[b, :x_lens[b]] - dur_hat[b, :x_lens[b]]) / dur_hat.size(0)
 
-                self.writer.add_scalar('Duration_Mean_Loss/train', torch.mean(dur_hat - dur), model.get_step())
+                self.writer.add_scalar('Duration_Mean_Loss/train', dur_loss_mean, model.get_step())
                 self.writer.add_scalar('Silence_Loss/train', sil_loss, model.get_step())
                 self.writer.add_scalar('Params/batch_size', session.bs, model.get_step())
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
