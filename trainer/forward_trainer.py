@@ -111,7 +111,7 @@ class ForwardTrainer:
                 self.writer.add_scalar('Pitch_Loss/train', pitch_loss, model.get_step())
                 self.writer.add_scalar('Duration_Loss/train', dur_loss, model.get_step())
                 dur_loss_mean = 0
-                for b in dur_hat.size(0):
+                for b in range(dur_hat.size(0)):
                     dur_loss_mean += torch.mean(dur_hat[b, :x_lens[b]] - dur_hat[b, :x_lens[b]]) / dur_hat.size(0)
 
                 self.writer.add_scalar('Duration_Mean_Loss/train', torch.mean(dur_hat - dur), model.get_step())
@@ -166,7 +166,7 @@ class ForwardTrainer:
                 dur_val_loss += dur_loss.item()
                 sil_val_loss += sil_loss.item()
                 dur_loss_mean = 0
-                for b in dur_hat.size(0):
+                for b in range(dur_hat.size(0)):
                     dur_loss_mean += torch.mean(dur_hat[b, :x_lens[b]] - dur_hat[b, :x_lens[b]]) / dur_hat.size(0)
 
                 duration_tensors.append(dur_hat.flatten())
