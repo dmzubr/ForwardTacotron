@@ -73,7 +73,7 @@ class ForwardTrainer:
 
                 duration_tensors.append(dur_hat.flatten())
                 dur_tar = dur.flatten()
-                duration_tensors_target.append(dur_tar[dur_tar < 60])
+                duration_tensors_target.append(dur_tar[dur_tar < 15])
 
                 sil_loss = self.l1_loss(sil_hat.unsqueeze(1), dur_sil.unsqueeze(1), x_lens)
                 pitch_loss = self.l1_loss(pitch_hat, pitch.unsqueeze(1), x_lens)
@@ -160,7 +160,7 @@ class ForwardTrainer:
                 sil_val_loss += sil_loss.item()
                 duration_tensors.append(dur_hat.flatten())
                 dur_tar = dur.flatten()
-                duration_tensors_target.append(dur_tar[dur_tar < 60])
+                duration_tensors_target.append(dur_tar[dur_tar < 15])
         m_val_loss /= len(val_set)
         dur_val_loss /= len(val_set)
         pitch_val_loss /= len(val_set)
