@@ -65,8 +65,8 @@ class ForwardTrainer:
                 model.train()
                 x, m, dur, x_lens, mel_lens, pitch, dur_sil = x.to(device), m.to(device), dur.to(device),\
                                                      x_lens.to(device), mel_lens.to(device), pitch.to(device), dur_sil.to(device)
-
                 m1_hat, m2_hat, dur_hat, pitch_hat, sil_hat = model(x, m, dur, mel_lens, pitch, dur_sil)
+                dur = dur - 5.
 
                 m1_loss = self.l1_loss(m1_hat, m, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, m, mel_lens)
@@ -157,6 +157,7 @@ class ForwardTrainer:
                                                  x_lens.to(device), mel_lens.to(device), pitch.to(device), dur_sil.to(device)
             with torch.no_grad():
                 m1_hat, m2_hat, dur_hat, pitch_hat, sil_hat = model(x, m, dur, mel_lens, pitch, dur_sil)
+                dur = dur - 5.
                 m1_loss = self.l1_loss(m1_hat, m, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, m, mel_lens)
                 dur_loss = self.l1_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
@@ -190,7 +191,6 @@ class ForwardTrainer:
         x, m, ids, x_lens, mel_lens, dur, pitch, sil = session.val_sample
         x, m, dur, mel_lens, pitch, sil = x.to(device), m.to(device), dur.to(device), \
                                           mel_lens.to(device), pitch.to(device), sil.to(device)
-
         m1_hat, m2_hat, dur_hat, pitch_hat, sil_hat = model(x, m, dur, mel_lens, pitch, sil)
         m1_hat = np_now(m1_hat)[0, :600, :]
         m2_hat = np_now(m2_hat)[0, :600, :]
