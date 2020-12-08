@@ -110,6 +110,10 @@ class ForwardTrainer:
                 self.writer.add_scalar('Mel_Loss/train', m1_loss + m2_loss, model.get_step())
                 self.writer.add_scalar('Pitch_Loss/train', pitch_loss, model.get_step())
                 self.writer.add_scalar('Duration_Loss/train', dur_loss, model.get_step())
+                dur_loss_mean = 0
+                for b in dur_hat.size(0):
+                    dur_loss_mean += torch.mean(dur_hat[b, :x_lens[b]] - dur_hat[b, :x_lens[b]]) / dur_hat.size(0)
+
                 self.writer.add_scalar('Duration_Mean_Loss/train', torch.mean(dur_hat - dur), model.get_step())
                 self.writer.add_scalar('Silence_Loss/train', sil_loss, model.get_step())
                 self.writer.add_scalar('Params/batch_size', session.bs, model.get_step())
@@ -161,12 +165,14 @@ class ForwardTrainer:
                 m_val_loss += m1_loss.item() + m2_loss.item()
                 dur_val_loss += dur_loss.item()
                 sil_val_loss += sil_loss.item()
-                dur_sum_loss = torch.mean(dur_hat - dur)
+                dur_loss_mean = 0
+                for b in dur_hat.size(0):
+                    dur_loss_mean += torch.mean(dur_hat[b, :x_lens[b]] - dur_hat[b, :x_lens[b]]) / dur_hat.size(0)
 
                 duration_tensors.append(dur_hat.flatten())
                 dur_tar = dur.flatten()
                 duration_tensors_target.append(dur_tar[dur_tar < 15])
-                dur_sum_val_loss += dur_sum_loss
+                dur_sum_val_loss += dur_loss_mean
 
         m_val_loss /= len(val_set)
         dur_val_loss /= len(val_set)
