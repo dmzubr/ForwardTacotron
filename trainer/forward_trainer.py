@@ -56,6 +56,9 @@ class ForwardTrainer:
         pitch_loss_avg = Averager()
         device = next(model.parameters()).device  # use same device as model parameters
         for e in range(1, epochs + 1):
+
+            duration_tensors = []
+            duration_tensors_target = []
             for i, (x, m, ids, x_lens, mel_lens, dur, pitch, dur_sil) in enumerate(session.train_set, 1):
 
                 start = time.time()
@@ -68,14 +71,12 @@ class ForwardTrainer:
                 m1_loss = self.l1_loss(m1_hat, m, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, m, mel_lens)
 
-
+                duration_tensors.append(dur_hat.flatten())
+                duration_tensors_target.append(dur.flatten())
                 sil_loss = self.l1_loss(sil_hat.unsqueeze(1), dur_sil.unsqueeze(1), x_lens)
                 pitch_loss = self.l1_loss(pitch_hat, pitch.unsqueeze(1), x_lens)
 
-                dur_mean = torch.mean(dur, dim=1)
-                dur_hat = dur_hat - dur_mean[:, None]
-                dur = dur - dur_mean[:, None]
-                dur_loss = self.l2_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
+                dur_loss = self.l1_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
 
                 loss = m1_loss + m2_loss + 0.1 * dur_loss + 0.1 * pitch_loss + 0.1 * sil_loss
                 optimizer.zero_grad()
@@ -112,12 +113,18 @@ class ForwardTrainer:
                 self.writer.add_scalar('Params/learning_rate', session.lr, model.get_step())
 
                 stream(msg)
+            duration_concat = torch.cat(duration_tensors, dim=0)
+            duration_concat_target = torch.cat(duration_tensors_target, dim=0)
 
-            m_val_loss, dur_val_loss, pitch_val_loss, sil_val_loss = self.evaluate(model, session.val_set)
+            m_val_loss, dur_val_loss, pitch_val_loss, sil_val_loss, duration_concat_val, duration_concat_val_target = self.evaluate(model, session.val_set)
             self.writer.add_scalar('Mel_Loss/val', m_val_loss, model.get_step())
             self.writer.add_scalar('Duration_Loss/val', dur_val_loss, model.get_step())
             self.writer.add_scalar('Silence_Loss/val', sil_val_loss, model.get_step())
             self.writer.add_scalar('Pitch_Loss/val', pitch_val_loss, model.get_step())
+            self.writer.add_histogram('Duration_Histo/train', duration_concat, model.get_step())
+            self.writer.add_histogram('Duration_Histo/train_target', duration_concat_target, model.get_step())
+            self.writer.add_histogram('Duration_Histo/val', duration_concat_val, model.get_step())
+            self.writer.add_histogram('Duration_Histo/val_target', duration_concat_val_target, model.get_step())
             save_checkpoint('forward', self.paths, model, optimizer, is_silent=True)
 
             m_loss_avg.reset()
@@ -127,13 +134,15 @@ class ForwardTrainer:
             sil_loss_avg.reset()
             print(' ')
 
-    def evaluate(self, model: ForwardTacotron, val_set: Dataset) -> Tuple[float, float, float, float]:
+    def evaluate(self, model: ForwardTacotron, val_set: Dataset) -> Tuple[float, float, float, float, torch.tensor, torch.tensor]:
         model.eval()
         m_val_loss = 0
         dur_val_loss = 0
         sil_val_loss = 0
         pitch_val_loss = 0
         device = next(model.parameters()).device
+        duration_tensors = []
+        duration_tensors_target = []
         for i, (x, m, ids, x_lens, mel_lens, dur, pitch, dur_sil) in enumerate(val_set, 1):
             x, m, dur, x_lens, mel_lens, pitch, dur_sil = x.to(device), m.to(device), dur.to(device), \
                                                  x_lens.to(device), mel_lens.to(device), pitch.to(device), dur_sil.to(device)
@@ -141,20 +150,19 @@ class ForwardTrainer:
                 m1_hat, m2_hat, dur_hat, pitch_hat, sil_hat = model(x, m, dur, mel_lens, pitch, dur_sil)
                 m1_loss = self.l1_loss(m1_hat, m, mel_lens)
                 m2_loss = self.l1_loss(m2_hat, m, mel_lens)
-                dur_mean = torch.mean(dur, dim=1)
-                dur_hat = dur_hat - dur_mean[:, None]
-                dur = dur - dur_mean[:, None]
-                dur_loss = self.l2_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
+                dur_loss = self.l1_loss(dur_hat.unsqueeze(1), dur.unsqueeze(1), x_lens)
                 sil_loss = self.l1_loss(sil_hat.unsqueeze(1), dur_sil.unsqueeze(1), x_lens)
                 pitch_val_loss += self.l1_loss(pitch_hat, pitch.unsqueeze(1), x_lens)
                 m_val_loss += m1_loss.item() + m2_loss.item()
                 dur_val_loss += dur_loss.item()
                 sil_val_loss += sil_loss.item()
+                duration_tensors.append(dur_hat.flatten())
+                duration_tensors_target.append(dur.flatten())
         m_val_loss /= len(val_set)
         dur_val_loss /= len(val_set)
         pitch_val_loss /= len(val_set)
         sil_val_loss /= len(val_set)
-        return m_val_loss, dur_val_loss, pitch_val_loss, sil_val_loss
+        return m_val_loss, dur_val_loss, pitch_val_loss, sil_val_loss, torch.cat(duration_tensors, dim=0), torch.cat(duration_tensors_target, dim=0)
 
     @ignore_exception
     def generate_plots(self, model: ForwardTacotron, session: TTSSession) -> None:

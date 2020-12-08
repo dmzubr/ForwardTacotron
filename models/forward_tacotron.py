@@ -124,6 +124,9 @@ class ForwardTacotron(nn.Module):
         super().__init__()
         self.rnn_dim = rnn_dim
         self.embedding = nn.Embedding(num_chars, embed_dims)
+        self.embedding_dur = nn.Embedding(num_chars, embed_dims)
+        self.embedding_dur_sil = nn.Embedding(num_chars, embed_dims)
+        self.embedding_pitch = nn.Embedding(num_chars, embed_dims)
         self.lr = LengthRegulator()
         self.dur_pred = SeriesPredictor(embed_dims,
                                         conv_dims=durpred_conv_dims,
@@ -166,15 +169,18 @@ class ForwardTacotron(nn.Module):
         if self.training:
             self.step += 1
 
-        x = self.embedding(x)
-        pitch_hat = self.pitch_pred(x).transpose(1, 2)
+        x_dur = self.embedding_dur(x)
+        x_dur_sil = self.embedding_dur_sil(x)
+        x_pitch = self.embedding_pitch(x)
+        pitch_hat = self.pitch_pred(x_pitch).transpose(1, 2)
 
-        dur_sil_hat = self.dur_sil_pred(x).squeeze()
+        dur_sil_hat = self.dur_sil_pred(x_dur_sil).squeeze()
         dur_sil_hat_proj = self.sil_proj(sil.unsqueeze(1)).transpose(1, 2)
-        dur_hat = self.dur_pred(x + dur_sil_hat_proj).squeeze()
+        dur_hat = self.dur_pred(x_dur + dur_sil_hat_proj).squeeze()
 
         pitch = pitch.unsqueeze(1)
 
+        x = self.embedding(x)
         x = x.transpose(1, 2)
         x = self.prenet(x)
 
@@ -211,16 +217,19 @@ class ForwardTacotron(nn.Module):
         device = next(self.parameters()).device  # use same device as parameters
         x = torch.as_tensor(x, dtype=torch.long, device=device).unsqueeze(0)
 
-        x = self.embedding(x)
+        x_dur = self.embedding_dur(x)
+        x_dur_sil = self.embedding_dur_sil(x)
+        x_pitch = self.embedding_pitch(x)
 
-        dur_sil_hat = self.dur_sil_pred(x, alpha=alpha).squeeze(2)
+        dur_sil_hat = self.dur_sil_pred(x_dur_sil, alpha=alpha).squeeze(2)
         dur_sil_hat_proj = self.sil_proj(dur_sil_hat.unsqueeze(1)).transpose(1, 2)
-        dur = self.dur_pred(x + dur_sil_hat_proj, alpha=1.)
+        dur = self.dur_pred(x_dur + dur_sil_hat_proj, alpha=1.)
         dur = dur.squeeze(2)
 
-        pitch_hat = self.pitch_pred(x).transpose(1, 2)
+        pitch_hat = self.pitch_pred(x_pitch).transpose(1, 2)
         pitch_hat = pitch_function(pitch_hat)
 
+        x = self.embedding(x)
         x = x.transpose(1, 2)
         x = self.prenet(x)
 
