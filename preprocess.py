@@ -34,7 +34,12 @@ class Preprocessor:
         np.save(self.paths.quant/f'{wav_id}.npy', x, allow_pickle=False)
         np.save(self.paths.raw_pitch/f'{wav_id}.npy', raw_pitch, allow_pickle=False)
         text = self.text_dict[wav_id]
-        text = clean_text(text)
+        if wav_id.startswith('en_'):
+            text = clean_text(text, language='en')
+            print(f'en: {text}')
+        else:
+            text = clean_text(text, language='de')
+            print(f'de: {text}')
         return wav_id, m.shape[-1], text
 
     def _convert_file(self, path: Path) -> Tuple[np.array, np.array, np.array]:
