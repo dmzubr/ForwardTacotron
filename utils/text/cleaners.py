@@ -86,7 +86,7 @@ def english_cleaners(text):
   return text
 
 
-def to_phonemes(text, language=hp.language):
+def to_phonemes(text, language='de'):
     text = text.replace('-', '—')
     phonemes = phonemize(text,
                          language=language,
