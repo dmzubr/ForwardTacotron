@@ -69,7 +69,7 @@ def convert_to_ascii(text):
   return unidecode(text)
 
 
-def basic_cleaners(text, language=hp.language):
+def basic_cleaners(text, language='de'):
   text = to_phonemes(text, language=language)
   text = collapse_whitespace(text)
   text = text.strip()
