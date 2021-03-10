@@ -197,17 +197,25 @@ class ForwardTacotron(nn.Module):
     def generate(self,
                  x: List[int],
                  alpha=1.0,
-                 pitch_function: Callable[[torch.tensor], torch.tensor] = lambda x: x) -> tuple:
+                 pitch_function: Callable[[torch.tensor], torch.tensor] = lambda x: x,
+                 pitch=None,
+                 durs=None) -> tuple:
         self.eval()
         device = next(self.parameters()).device  # use same device as parameters
         x = torch.as_tensor(x, dtype=torch.long, device=device).unsqueeze(0)
 
         x = self.embedding(x)
-        dur = self.dur_pred(x, alpha=alpha)
-        dur = dur.squeeze(2)
+        if durs is None:
+            dur = self.dur_pred(x, alpha=alpha)
+            dur = dur.squeeze(2)
+        else:
+            dur = durs
 
-        pitch_hat = self.pitch_pred(x).transpose(1, 2)
-        pitch_hat = pitch_function(pitch_hat)
+        if pitch is None:
+            pitch_hat = self.pitch_pred(x).transpose(1, 2)
+            pitch_hat = pitch_function(pitch_hat)
+        else:
+            pitch_hat = pitch
 
         x = x.transpose(1, 2)
         x = self.prenet(x)
@@ -229,10 +237,10 @@ class ForwardTacotron(nn.Module):
         x_post = self.post_proj(x_post)
         x_post = x_post.transpose(1, 2)
 
-        x, x_post, dur = x.squeeze(), x_post.squeeze(), dur.squeeze()
+        x, x_post = x.squeeze(), x_post.squeeze()
         x = x.cpu().data.numpy()
         x_post = x_post.cpu().data.numpy()
-        dur = dur.cpu().data.numpy()
+        #dur = dur.cpu().data.numpy()
 
         return x, x_post, dur, pitch_hat
 

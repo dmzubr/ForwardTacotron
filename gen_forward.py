@@ -15,6 +15,7 @@ if __name__ == '__main__':
     # Parse Arguments
     parser = argparse.ArgumentParser(description='TTS Generator')
     parser.add_argument('--input_text', '-i', type=str, help='[string] Type in something here and TTS will generate it!')
+    parser.add_argument('--tts_weights_pitch', type=str, help='[string/path] Load in different FastSpeech weights')
     parser.add_argument('--tts_weights', type=str, help='[string/path] Load in different FastSpeech weights')
     parser.add_argument('--save_attention', '-a', dest='save_attn', action='store_true', help='Save Attention Plots')
     parser.add_argument('--force_cpu', '-c', action='store_true', help='Forces CPU-only training, even when in CUDA capable environment')
@@ -97,6 +98,30 @@ if __name__ == '__main__':
         voc_load_path = args.voc_weights if args.voc_weights else paths.voc_latest_weights
         voc_model.load(voc_load_path)
 
+    print('\nInitialising Forward TTS Model Pitch...\n')
+    tts_model_pitch = ForwardTacotron(embed_dims=hp.forward_embed_dims,
+                                num_chars=len(phonemes),
+                                durpred_rnn_dims=hp.forward_durpred_rnn_dims,
+                                durpred_conv_dims=hp.forward_durpred_conv_dims,
+                                durpred_dropout=hp.forward_durpred_dropout,
+                                pitch_rnn_dims=hp.forward_pitch_rnn_dims,
+                                pitch_conv_dims=hp.forward_pitch_conv_dims,
+                                pitch_dropout=hp.forward_pitch_dropout,
+                                pitch_emb_dims=hp.forward_pitch_emb_dims,
+                                pitch_proj_dropout=hp.forward_pitch_proj_dropout,
+                                rnn_dim=hp.forward_rnn_dims,
+                                postnet_k=hp.forward_postnet_K,
+                                postnet_dims=hp.forward_postnet_dims,
+                                prenet_k=hp.forward_prenet_K,
+                                prenet_dims=hp.forward_prenet_dims,
+                                highways=hp.forward_num_highways,
+                                dropout=hp.forward_dropout,
+                                n_mels=hp.num_mels).to(device)
+
+    tts_load_path_pitch = args.tts_weights_pitch
+    tts_model_pitch.load(tts_load_path_pitch)
+    print(f'pitch steps {tts_model_pitch.get_step()}')
+
     print('\nInitialising Forward TTS Model...\n')
     tts_model = ForwardTacotron(embed_dims=hp.forward_embed_dims,
                                 num_chars=len(phonemes),
@@ -154,7 +179,8 @@ if __name__ == '__main__':
     for i, x in enumerate(inputs, 1):
 
         print(f'\n| Generating {i}/{len(inputs)}')
-        _, m, dur, pitch = tts_model.generate(x, alpha=args.alpha, pitch_function=pitch_function)
+        _, m_p, dur_p, pitch_p = tts_model_pitch.generate(x, alpha=args.alpha, pitch_function=pitch_function)
+        _, m, dur, pitch = tts_model.generate(x, alpha=args.alpha, pitch_function=pitch_function, pitch=pitch_p, durs=None)
 
         if args.vocoder == 'griffinlim':
             v_type = args.vocoder
