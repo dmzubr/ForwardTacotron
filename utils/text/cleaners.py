@@ -1,6 +1,7 @@
 from phonemizer.phonemize import phonemize
-from utils import hparams as hp
 from utils.text.symbols import phonemes_set
+import hparams as hp
+from .sova_cleaner import to_sova_phonemes
 
 """ from https://github.com/keithito/tacotron """
 
@@ -18,7 +19,7 @@ hyperparameter. Some cleaners are English-specific. You'll typically want to use
 
 import re
 from unidecode import unidecode
-from .numbers import normalize_numbers
+from .numbers_ut import normalize_numbers
 
 
 # Regular expression matching whitespace:
@@ -83,6 +84,14 @@ def english_cleaners(text):
   text = to_phonemes(text)
   text = collapse_whitespace(text)
   text = text.strip()
+  return text
+
+
+def sova_cleaners(text):
+  text = text.lower()
+  text = to_sova_phonemes(text)
+  text = collapse_whitespace(text)
+  # print(text)
   return text
 
 

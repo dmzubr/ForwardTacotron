@@ -1,0 +1,4 @@
+[submodule "sova-tts-tps"]
+	path = utlis/text/sova_tts_tps_zdy
+	url = https://github.com/dmzubr/sova-tts-tps
+	branch = taco-forward-compat

@@ -4,7 +4,8 @@
 Defines the set of symbols used in text input to the model.
 
 The default is a set of ASCII characters that works well for English or text that has been run through Unidecode. For other data, you can modify _characters. See TRAINING_DATA.md for details. '''
-from utils.text import cmudict
+from . import cmudict
+from .sova_tts_tps_zdy.tps.ssymbols.russian import RU_TRANS_SET
 
 _pad = '_'
 _punctuation = '!\'(),.:;? '
@@ -21,8 +22,18 @@ _suprasegmentals = 'ˈˌːˑ'
 _other_symbols = 'ʍwɥʜʢʡɕʑɺɧ'
 _diacrilics = 'ɚ˞ɫ'
 
-phonemes = sorted(list(
+
+en_phonemes = sorted(list(
    _pad + _punctuation + _special + _vowels + _non_pulmonic_consonants
-   + _pulmonic_consonants + _suprasegmentals + _other_symbols + _diacrilics))
+   + _pulmonic_consonants + _suprasegmentals + _other_symbols + _diacrilics)
+)
+
+
+phonemes = sorted(
+   list(_pad + _punctuation + _special) +
+   RU_TRANS_SET
+)
+print(f'Resulting Taco phonemes list is')
+print(phonemes)
 
 phonemes_set = set(phonemes)

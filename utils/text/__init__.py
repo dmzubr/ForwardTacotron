@@ -1,9 +1,10 @@
 """ from https://github.com/keithito/tacotron """
 import re
-from utils import hparams as hp
-from utils.text import cleaners
-from utils.text.cleaners import to_phonemes
-from utils.text.symbols import phonemes
+import hparams as hp
+from . import cleaners
+from .cleaners import to_phonemes
+from .symbols import phonemes
+from .sova_cleaner import to_sova_phonemes
 
 # Mappings from symbol to numeric ID and vice versa:
 _symbol_to_id = {s: i for i, s in enumerate(phonemes)}
@@ -35,7 +36,8 @@ def text_to_sequence(text):
             sequence += _symbols_to_sequence(text)
             break
         sequence += _symbols_to_sequence(m.group(1))
-        sequence += _arpabet_to_sequence(m.group(2))
+        sequence += _symbols_to_sequence(m.group(2).split())
+        # sequence += _arpabet_to_sequence(m.group(2))
         text = m.group(3)
 
     return sequence
